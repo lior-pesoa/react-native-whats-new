@@ -15,7 +15,11 @@ plugin. Inspired by [Notelet](https://github.com/mykolaharmash/notelet), a
 SwiftUI package by Mykola Harmash (MIT) — this is the same idea, in
 React Native, wired to a rating prompt.
 
-<!-- demo gif -->
+<p align="center">
+  <img src="docs/demo.gif" width="320" alt="A what's-new sheet sliding up after an update: an icon page, a photo page, a looping video page and a last page, then the iOS rating prompt after Got it" />
+</p>
+
+<p align="center"><sub>Running in <a href="https://snips.so">snips</a> — four pages (icon, photo, video, icon), then the store rating prompt after “Got it”. <a href="docs/demo.mp4">MP4</a></sub></p>
 
 ## Install
 
