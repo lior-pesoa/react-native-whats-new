@@ -10,7 +10,7 @@ yarn            # installs the library and the example app (yarn 4 workspaces)
 yarn example start   # Expo dev server for the example; open it in Expo Go
 ```
 
-The example imports `react-native-whats-new` straight from `src/`, so edits
+The example imports `@liorpesoa/react-native-whats-new` straight from `src/`, so edits
 show up on reload. Its "Replay the update to 1.2.0" button walks the whole
 automatic flow, including the rating ask.
 

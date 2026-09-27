@@ -1,5 +1,9 @@
 # react-native-whats-new
 
+[![npm](https://img.shields.io/npm/v/@liorpesoa/react-native-whats-new)](https://www.npmjs.com/package/@liorpesoa/react-native-whats-new)
+
+Published on npm as **`@liorpesoa/react-native-whats-new`**.
+
 A paged "what's new" bottom sheet for React Native — and, when the user taps
 through to the end, a hook to ask for a store rating right then.
 
@@ -24,13 +28,13 @@ React Native, wired to a rating prompt.
 ## Install
 
 ```sh
-npx expo install react-native-whats-new @react-native-async-storage/async-storage
+npx expo install @liorpesoa/react-native-whats-new @react-native-async-storage/async-storage
 ```
 
 or with plain React Native / npm:
 
 ```sh
-npm install react-native-whats-new @react-native-async-storage/async-storage
+npm install @liorpesoa/react-native-whats-new @react-native-async-storage/async-storage
 ```
 
 No native code — nothing to link, nothing to `pod install`, and it runs fine
@@ -49,13 +53,13 @@ Cursor, Codex, Copilot and friends can wire it up correctly the first time.
   ```
 
 - **Or point your agent at [`llms.txt`](llms.txt)**: it's in
-  `node_modules/react-native-whats-new/llms.txt` after install, and at
+  `node_modules/@liorpesoa/react-native-whats-new/llms.txt` after install, and at
   `https://raw.githubusercontent.com/lior-pesoa/react-native-whats-new/main/llms.txt`.
 
 - **Copy-paste prompt:**
 
-  > Add react-native-whats-new to this app. Read
-  > node_modules/react-native-whats-new/llms.txt first. Show notes for the
+  > Add @liorpesoa/react-native-whats-new to this app. Read
+  > node_modules/@liorpesoa/react-native-whats-new/llms.txt first. Show notes for the
   > current version, mount it at the root, and ask for a store rating after
   > "Got it".
 
@@ -71,7 +75,7 @@ import { useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Application from 'expo-application';
 import * as StoreReview from 'expo-store-review';
-import { WhatsNew, type WhatsNewRelease, type WhatsNewHandle } from 'react-native-whats-new';
+import { WhatsNew, type WhatsNewRelease, type WhatsNewHandle } from '@liorpesoa/react-native-whats-new';
 
 const notes: WhatsNewRelease[] = [
   {
@@ -261,7 +265,7 @@ const mmkvAdapter = {
 **Notes from remote JSON:**
 
 ```tsx
-import { validateNotes } from 'react-native-whats-new';
+import { validateNotes } from '@liorpesoa/react-native-whats-new';
 
 const res = await fetch('https://example.com/whats-new.json');
 const result = validateNotes(await res.json());
@@ -313,7 +317,7 @@ function InlineVideo({ source }: { source: { uri: string } | number }) {
 **Custom UI with the headless hook:**
 
 ```tsx
-import { useWhatsNew, WhatsNewSheet } from 'react-native-whats-new';
+import { useWhatsNew, WhatsNewSheet } from '@liorpesoa/react-native-whats-new';
 
 function App() {
   const wn = useWhatsNew({ notes, currentVersion, storage: AsyncStorage });

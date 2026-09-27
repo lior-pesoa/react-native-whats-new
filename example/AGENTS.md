@@ -1,11 +1,11 @@
 # Example app
 
-This is the example app for the `react-native-whats-new` library, not a
+This is the example app for the `@liorpesoa/react-native-whats-new` library, not a
 standalone product. It is a single screen (`src/App.tsx`, registered from
 `index.js`) that simulates app versions, resets the seen version, toggles
 sheet height / theme / the rating ask, and logs `onEvent` output.
 
-`react-native-whats-new` resolves to the library source in `../src`: Metro
+`@liorpesoa/react-native-whats-new` resolves to the library source in `../src`: Metro
 uses the `react-native-whats-new-source` export condition
 (`metro.config.js`) and Babel is configured by
 `react-native-builder-bob/babel-config` (`babel.config.js`). Library edits

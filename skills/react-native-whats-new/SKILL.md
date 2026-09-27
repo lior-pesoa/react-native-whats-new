@@ -5,12 +5,12 @@ description: Use when adding a what's-new / release notes / changelog / "new in 
 
 # Add react-native-whats-new to an app
 
-`react-native-whats-new` shows a paged bottom sheet with release notes on the
+`react-native-whats-new` (npm: `@liorpesoa/react-native-whats-new`) shows a paged bottom sheet with release notes on the
 first launch after an update, then optionally the native store-rating prompt.
 Pure JS, iOS + Android, works in Expo Go.
 
 The full API is in `llms.txt` (in this repo, in
-`node_modules/react-native-whats-new/llms.txt` once installed, or at
+`node_modules/@liorpesoa/react-native-whats-new/llms.txt` once installed, or at
 https://raw.githubusercontent.com/lior-pesoa/react-native-whats-new/main/llms.txt).
 Read it before writing code. Use only props listed there.
 
@@ -58,11 +58,11 @@ Read `package.json` and the lockfiles, then note:
 
 Only add what is missing.
 
-- Expo: `npx expo install react-native-whats-new` plus any of
+- Expo: `npx expo install @liorpesoa/react-native-whats-new` plus any of
   `@react-native-async-storage/async-storage`, `expo-application`,
   `expo-store-review` the app lacks. Always `npx expo install` (it picks
   SDK-compatible versions); use `bunx expo install` in bun projects.
-- Bare: `<pm> add react-native-whats-new` (`npm install` for npm) plus any of
+- Bare: `<pm> add @liorpesoa/react-native-whats-new` (`npm install` for npm) plus any of
   `@react-native-async-storage/async-storage`, `react-native-device-info`,
   `react-native-in-app-review` the app lacks, then `cd ios && pod install`
   if a native package was added. The library itself needs no pod install.
@@ -81,7 +81,7 @@ Read the CURRENT marketing version from `app.json` (`expo.version`),
 (`CFBundleShortVersionString`); fall back to `package.json` `version`.
 
 ```ts
-import type { WhatsNewRelease } from 'react-native-whats-new';
+import type { WhatsNewRelease } from '@liorpesoa/react-native-whats-new';
 
 export const whatsNewNotes: WhatsNewRelease[] = [
   {

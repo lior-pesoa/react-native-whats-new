@@ -15,7 +15,7 @@ import {
   type WhatsNewHandle,
   type WhatsNewRelease,
   type WhatsNewSource,
-} from 'react-native-whats-new';
+} from '@liorpesoa/react-native-whats-new';
 
 const SIMULATED_VERSIONS = ['1.0.0', '1.1.0', '1.2.0'] as const;
 type SimulatedVersion = (typeof SIMULATED_VERSIONS)[number];

@@ -2,6 +2,8 @@
 
 > A paged "what's new" bottom sheet for React Native and Expo, shown automatically on the first launch after an app update, optionally followed by the native App Store / Play Store rating prompt. Pure JS: no native code, no config plugin, works in Expo Go, iOS and Android.
 
+npm package name: `@liorpesoa/react-native-whats-new` (scoped). Import everything from that name.
+
 This file is the complete integration guide for coding agents. Everything below matches the published TypeScript API; do not invent props that are not listed here.
 
 ## What it does
@@ -17,7 +19,7 @@ This file is the complete integration guide for coding agents. Everything below 
 Expo (managed or dev build):
 
 ```sh
-npx expo install react-native-whats-new @react-native-async-storage/async-storage
+npx expo install @liorpesoa/react-native-whats-new @react-native-async-storage/async-storage
 # version source + rating prompt (optional, both work in Expo Go)
 npx expo install expo-application expo-store-review
 ```
@@ -25,7 +27,7 @@ npx expo install expo-application expo-store-review
 Bare React Native (use the project's package manager: npm, yarn, pnpm or bun):
 
 ```sh
-npm install react-native-whats-new @react-native-async-storage/async-storage
+npm install @liorpesoa/react-native-whats-new @react-native-async-storage/async-storage
 # version source + rating prompt (optional)
 npm install react-native-device-info react-native-in-app-review
 cd ios && pod install
@@ -166,7 +168,7 @@ Rating: asked only after an automatic show, when the user tapped "Got it" on the
 `constants/whatsNew.ts` (or `whatsNew.ts`):
 
 ```ts
-import type { WhatsNewRelease } from 'react-native-whats-new';
+import type { WhatsNewRelease } from '@liorpesoa/react-native-whats-new';
 
 export const whatsNewNotes: WhatsNewRelease[] = [
   {
@@ -193,7 +195,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Application from 'expo-application';
 import * as StoreReview from 'expo-store-review';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WhatsNew } from 'react-native-whats-new';
+import { WhatsNew } from '@liorpesoa/react-native-whats-new';
 import { whatsNewNotes } from '../constants/whatsNew';
 
 export default function RootLayout() {
@@ -224,7 +226,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getVersion } from 'react-native-device-info';
 import InAppReview from 'react-native-in-app-review';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WhatsNew } from 'react-native-whats-new';
+import { WhatsNew } from '@liorpesoa/react-native-whats-new';
 import { whatsNewNotes } from './whatsNew';
 import { RootNavigator } from './navigation';
 
@@ -272,7 +274,7 @@ Without safe-area-context, drop `insets`.
 import { createRef } from 'react';
 import { Pressable, Text } from 'react-native';
 import * as Application from 'expo-application';
-import type { WhatsNewHandle } from 'react-native-whats-new';
+import type { WhatsNewHandle } from '@liorpesoa/react-native-whats-new';
 
 // Shared ref: pass it as <WhatsNew ref={whatsNewRef} /> at the root.
 export const whatsNewRef = createRef<WhatsNewHandle>();
@@ -293,7 +295,7 @@ export function WhatsNewRow() {
 ## Headless hook
 
 ```tsx
-import { useWhatsNew, WhatsNewSheet } from 'react-native-whats-new';
+import { useWhatsNew, WhatsNewSheet } from '@liorpesoa/react-native-whats-new';
 
 const wn = useWhatsNew({ notes, currentVersion, storage: AsyncStorage });
 <WhatsNewSheet

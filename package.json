@@ -1,5 +1,5 @@
 {
-  "name": "react-native-whats-new",
+  "name": "@liorpesoa/react-native-whats-new",
   "version": "0.1.0",
   "description": "A what's-new carousel for React Native that asks for a store rating when it closes. iOS + Android, no native code.",
   "main": "./lib/module/index.js",
@@ -55,6 +55,7 @@
   },
   "homepage": "https://github.com/lior-pesoa/react-native-whats-new#readme",
   "publishConfig": {
+    "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "devDependencies": {
