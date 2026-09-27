@@ -431,6 +431,15 @@ Same options as `<WhatsNew />` minus the rendering-only ones (`theme`,
 - [Sending a pull request](CONTRIBUTING.md#sending-a-pull-request)
 - [Code of conduct](CODE_OF_CONDUCT.md)
 
+## Author
+
+Made by **Lior Pesoa** — [liorpesoa.com](https://liorpesoa.com) ·
+[X](https://x.com/liorpesoa) ·
+[LinkedIn](https://www.linkedin.com/in/lior-pesoa) ·
+[hello@liorpesoa.com](mailto:hello@liorpesoa.com)
+
+Built for (and running in) [snips](https://snips.so).
+
 ## Credits
 
 Inspired by [Notelet](https://github.com/mykolaharmash/notelet) by
