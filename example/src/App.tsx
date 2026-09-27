@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as StoreReview from 'expo-store-review';
 import {
   WhatsNew,
+  markWhatsNewSeen,
   resetWhatsNew,
   type WhatsNewEvent,
   type WhatsNewHandle,
@@ -153,13 +154,14 @@ function ExampleApp() {
   // 'stub' shows a banner; 'store' calls the real prompt (see requestReview below).
   const [reviewMode, setReviewMode] = useState<'stub' | 'store'>('stub');
   const [toast, setToast] = useState<string | null>(null);
+  const [launch, setLaunch] = useState(0);
   const [events, setEvents] = useState<LoggedEvent[]>([]);
 
   const showToast = (message: string) => {
     setToast(message);
     setTimeout(
       () => setToast((current) => (current === message ? null : current)),
-      2500
+      4000
     );
   };
 
@@ -198,7 +200,7 @@ function ExampleApp() {
             }}
           />
           <Button
-            label="Show 1.2.0 again"
+            label="Open 1.2.0 manually"
             onPress={() => {
               const opened = whatsNew.current?.show('1.2.0');
               if (!opened) {
@@ -207,6 +209,19 @@ function ExampleApp() {
             }}
           />
         </View>
+        <Button
+          label="Replay the update to 1.2.0"
+          onPress={async () => {
+            // Pretend 1.1.0 was the last version seen, then relaunch on 1.2.0.
+            await markWhatsNewSeen(AsyncStorage, '1.1.0');
+            setSimulatedVersion('1.2.0');
+            setLaunch((n) => n + 1);
+          }}
+        />
+        <Text style={styles.hint}>
+          The rating ask only follows an automatic show (an update) that ends
+          with "Got it". Opening manually, like a settings row, never asks.
+        </Text>
 
         <View style={styles.row}>
           <Button
@@ -236,12 +251,6 @@ function ExampleApp() {
             }
           />
         </View>
-
-        {toast ? (
-          <View style={styles.toast}>
-            <Text style={styles.toastText}>{toast}</Text>
-          </View>
-        ) : null}
 
         <View style={styles.logHeader}>
           <Text style={styles.sectionTitle}>What your analytics would get</Text>
@@ -276,7 +285,18 @@ function ExampleApp() {
         </View>
       </ScrollView>
 
+      {toast ? (
+        <View
+          pointerEvents="none"
+          style={[styles.toast, { top: insets.top + 8 }]}
+        >
+          <Text style={styles.toastText}>{toast}</Text>
+        </View>
+      ) : null}
+
       <WhatsNew
+        // A new key = a fresh app launch, so the update check runs again.
+        key={launch}
         ref={whatsNew}
         notes={notes}
         currentVersion={simulatedVersion}
@@ -423,9 +443,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   toast: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
     backgroundColor: '#111',
-    borderRadius: 10,
-    padding: 12,
+    borderRadius: 12,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  hint: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: '#888',
   },
   toastText: {
     color: '#FFFFFF',
