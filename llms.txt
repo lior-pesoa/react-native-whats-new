@@ -1,0 +1,339 @@
+# react-native-whats-new
+
+> A paged "what's new" bottom sheet for React Native and Expo, shown automatically on the first launch after an app update, optionally followed by the native App Store / Play Store rating prompt. Pure JS: no native code, no config plugin, works in Expo Go, iOS and Android.
+
+This file is the complete integration guide for coding agents. Everything below matches the published TypeScript API; do not invent props that are not listed here.
+
+## What it does
+
+- You keep a list of releases (`notes`), each a version string plus one or more pages.
+- On every mount it compares the app's marketing version (`currentVersion`) with the last version it stored in `storage`.
+- On the first launch after an update where `notes` has a release for the new version, it slides up a paged sheet. When the user closes it (tapping "Got it" on the last page, swiping it down, tapping the backdrop, or Android back), that version is stored as seen.
+- If `requestReview` is passed, it is called after the user taps "Got it" and the sheet has finished animating out.
+- A fresh install never shows anything: it silently stores the current version, so the next update is the first one to show.
+
+## Install
+
+Expo (managed or dev build):
+
+```sh
+npx expo install react-native-whats-new @react-native-async-storage/async-storage
+# version source + rating prompt (optional, both work in Expo Go)
+npx expo install expo-application expo-store-review
+```
+
+Bare React Native (use the project's package manager: npm, yarn, pnpm or bun):
+
+```sh
+npm install react-native-whats-new @react-native-async-storage/async-storage
+# version source + rating prompt (optional)
+npm install react-native-device-info react-native-in-app-review
+cd ios && pod install
+```
+
+`react-native-whats-new` itself has no native code; `pod install` is only for the native peers (AsyncStorage, device-info, in-app-review). Peer deps: `react >= 18`, `react-native >= 0.72`. It does not need reanimated, gesture-handler or safe-area-context.
+
+If the app already uses MMKV or another key-value store, reuse it through an adapter (see Storage) instead of adding AsyncStorage.
+
+## Where the inputs come from
+
+- `currentVersion`: the MARKETING version ("1.4.0" = CFBundleShortVersionString / versionName), never the build number.
+  - Expo: `Application.nativeApplicationVersion` from `expo-application` (a `string | null`).
+  - Bare: `getVersion()` from `react-native-device-info`.
+  - In development these return the native binary's version (Expo Go reports Expo Go's own version); to test, pass a literal like `'1.4.0'`.
+- `requestReview`:
+  - Expo: `() => StoreReview.requestReview()` from `expo-store-review`.
+  - Bare: `() => InAppReview.RequestInAppReview()` from `react-native-in-app-review`.
+- `storage`: `AsyncStorage` from `@react-native-async-storage/async-storage`, or an adapter.
+
+## Storage
+
+Required. Any object with this shape (sync or async):
+
+```ts
+type WhatsNewStorage = {
+  getItem(key: string): Promise<string | null> | string | null | undefined;
+  setItem(key: string, value: string): Promise<void> | void;
+};
+```
+
+`storage={AsyncStorage}` fits directly. MMKV does NOT (it has `getString`/`set`), so wrap it:
+
+```ts
+import { MMKV } from 'react-native-mmkv';
+
+const mmkv = new MMKV();
+export const whatsNewStorage = {
+  getItem: (key: string) => mmkv.getString(key) ?? null,
+  setItem: (key: string, value: string) => mmkv.set(key, value),
+};
+```
+
+The library uses one key: `react-native-whats-new:last-seen-version`. Storage failures never throw into the app: a failed read means "don't show this launch".
+
+## Notes and page types
+
+```ts
+type WhatsNewRelease = { version: string; pages: WhatsNewPage[] };
+
+type WhatsNewPage =
+  | { type: 'list'; title: string; rows: WhatsNewListRow[] }
+  | {
+      type: 'media';
+      kind: 'image' | 'video';
+      source: { uri: string } | number; // remote, or require('./x.png')
+      poster?: { uri: string } | number; // shown for video without renderVideo
+      title?: string;
+      description?: string;
+    }
+  | { type: 'custom'; render: () => ReactNode };
+
+type WhatsNewListRow = {
+  icon?: ReactNode | ImageSourcePropType; // an emoji string, your icon element, or an image
+  title: string;
+  description?: string;
+};
+```
+
+- Versions are semver-ish: "1.2.0" and "1.2" are equal; "-beta" / "+7" suffixes are ignored.
+- One release per version. A release with zero pages never shows.
+- Video pages only play if you pass `renderVideo`; otherwise they show `poster`.
+- `custom` pages are functions, so they cannot come from remote JSON.
+
+## `<WhatsNew />` props
+
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `notes` | `readonly WhatsNewRelease[] \| null` | required | Inline array literals are fine (compared by content). `null` = still loading |
+| `currentVersion` | `string \| null \| undefined` | required | `null`/`undefined` = wait, check nothing yet |
+| `storage` | `WhatsNewStorage` | required | AsyncStorage or an adapter |
+| `matchMode` | `'exact' \| 'minor'` | `'exact'` | `'minor'`: 1.2.3 reuses the newest 1.2.x notes not newer than the app |
+| `showOnFirstInstall` | `boolean` | `false` | |
+| `when` | `() => boolean \| Promise<boolean>` | none | App gate; `false` or a throw = skip this launch, nothing marked seen |
+| `enabled` | `boolean` | `true` | `false` = no storage reads/writes, no show; evaluates when it turns `true` |
+| `onEvent` | `(event: WhatsNewEvent) => void` | none | Throws are swallowed |
+| `requestReview` | `() => Promise<unknown> \| unknown` | none | Omit for notes-only |
+| `reviewOn` | `'done' \| 'done-or-dismiss' \| 'never'` | `'done'` | `'never'` = notes-only even with `requestReview` |
+| `reviewDelayMs` | `number` | `400` | Counted from the end of the sheet's out-animation |
+| `theme` | `Partial<WhatsNewTheme>` | system light/dark | Merged over `defaultTheme` / `darkTheme` |
+| `labels` | `Partial<WhatsNewLabels>` | English | For localization |
+| `sheetHeight` | `'standard' \| 'full'` | `'standard'` | standard = content-sized, max 75% of the window |
+| `renderVideo` | `(source, page) => ReactNode` | none | e.g. an expo-video `VideoView` |
+| `insets` | `{ top: number; bottom: number }` | `{ top: 0, bottom: 0 }` | Pass `useSafeAreaInsets()`; the sheet adds 24px |
+| `ref` | `Ref<WhatsNewHandle>` | none | `ref.current?.show(version): boolean` |
+
+```ts
+type WhatsNewTheme = {
+  background: string; text: string; secondaryText: string;
+  accent: string; onAccent: string; dot: string; backdrop: string;
+  radius: number;
+  fonts: { title?: string; body?: string; button?: string }; // families, no weights
+};
+type WhatsNewLabels = {
+  next: string; // 'Continue'
+  done: string; // 'Got it'
+  close: string; // 'Close' (accessibility label)
+  page: (index: number, count: number) => string; // 'Page 1 of 3', 1-based
+};
+type WhatsNewEvent =
+  | { type: 'shown'; version: string; pageCount: number; manual: boolean }
+  | { type: 'page_viewed'; version: string; pageIndex: number; pageCount: number }
+  | { type: 'done'; version: string; pageIndex: number; pageCount: number }
+  | { type: 'dismissed'; version: string; pageIndex: number; pageCount: number }
+  | { type: 'review_requested'; version: string };
+```
+
+Events carry shapes only (versions, indices, counts, booleans), never note text.
+
+## When it shows
+
+Checked once per mount (again if `currentVersion`, `matchMode`, `showOnFirstInstall`, the notes' content, or `enabled` change):
+
+1. `enabled` is false or `currentVersion` is null/undefined: nothing, no storage access.
+2. No stored version (fresh install, or first release that includes this library): nothing shown; current version stored. `showOnFirstInstall` overrides.
+3. Current version <= stored version (same version, downgrade, or unparseable order): nothing.
+4. Update, but `notes` has no release for it (or it has zero pages): nothing; current version stored, so notes added later for this version never show.
+5. Update with a matching release: `when()` is awaited if given (false = retry next launch), then the sheet shows. Only the current version's notes show; skipped versions are not replayed.
+6. Closing the automatic sheet (any way) stores the version as seen.
+
+Manual shows via `ref.current?.show(version)` (exact version match) never touch storage and never ask for a review. They return `false` when that version has no notes.
+
+Rating: asked only after an automatic show, when the user tapped "Got it" on the last page (`reviewOn='done'`) or also on any dismissal (`'done-or-dismiss'`), after `reviewDelayMs`. Emits `review_requested` just before calling `requestReview`. A throwing or rejecting `requestReview` is swallowed.
+
+## Canonical integration: Expo Router
+
+`constants/whatsNew.ts` (or `whatsNew.ts`):
+
+```ts
+import type { WhatsNewRelease } from 'react-native-whats-new';
+
+export const whatsNewNotes: WhatsNewRelease[] = [
+  {
+    version: '1.4.0', // the version in app.json / app.config "version"
+    pages: [
+      {
+        type: 'list',
+        title: "What's new",
+        rows: [
+          { icon: '⚡️', title: 'Faster sync', description: 'Changes land in under a second.' },
+          { icon: '🌙', title: 'Dark mode', description: 'Follows your system setting.' },
+        ],
+      },
+    ],
+  },
+];
+```
+
+`app/_layout.tsx`:
+
+```tsx
+import { Stack } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Application from 'expo-application';
+import * as StoreReview from 'expo-store-review';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { WhatsNew } from 'react-native-whats-new';
+import { whatsNewNotes } from '../constants/whatsNew';
+
+export default function RootLayout() {
+  const insets = useSafeAreaInsets(); // Expo Router provides SafeAreaProvider
+  return (
+    <>
+      <Stack />
+      <WhatsNew
+        notes={whatsNewNotes}
+        currentVersion={Application.nativeApplicationVersion}
+        storage={AsyncStorage}
+        insets={insets}
+        requestReview={() => StoreReview.requestReview()}
+      />
+    </>
+  );
+}
+```
+
+Keep the app's existing providers and navigator; add `<WhatsNew />` as a sibling of the navigator inside them. It renders a `Modal`, so its position in the tree does not matter, only that it stays mounted.
+
+## Canonical integration: bare React Native
+
+`App.tsx`:
+
+```tsx
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getVersion } from 'react-native-device-info';
+import InAppReview from 'react-native-in-app-review';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { WhatsNew } from 'react-native-whats-new';
+import { whatsNewNotes } from './whatsNew';
+import { RootNavigator } from './navigation';
+
+function Root() {
+  const insets = useSafeAreaInsets();
+  return (
+    <>
+      <RootNavigator />
+      <WhatsNew
+        notes={whatsNewNotes}
+        currentVersion={getVersion()}
+        storage={AsyncStorage}
+        insets={insets}
+        requestReview={() => InAppReview.RequestInAppReview()}
+      />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <Root />
+    </SafeAreaProvider>
+  );
+}
+```
+
+Without safe-area-context, drop `insets`.
+
+## Onboarding, auth and remote notes
+
+```tsx
+<WhatsNew enabled={hasFinishedOnboarding} /* ... */ />
+```
+
+- `enabled={false}` while onboarding, sign-in or a paywall is on screen, so the sheet never covers it; it evaluates as soon as `enabled` becomes true.
+- `markWhatsNewSeen(storage, version)` at the end of onboarding stores the current version without showing anything (needed with `showOnFirstInstall`, or if the component could evaluate before onboarding ends).
+- `when={() => ...}` for an async gate (e.g. "not during a call"); false retries next launch.
+- Remote notes: pass `notes={null}` until they have loaded and passed `validateNotes`. `null` means "still loading": nothing is evaluated or stored. An empty array means "no notes", and the version is stored as seen.
+
+## Settings row ("What's new")
+
+```tsx
+import { createRef } from 'react';
+import { Pressable, Text } from 'react-native';
+import * as Application from 'expo-application';
+import type { WhatsNewHandle } from 'react-native-whats-new';
+
+// Shared ref: pass it as <WhatsNew ref={whatsNewRef} /> at the root.
+export const whatsNewRef = createRef<WhatsNewHandle>();
+
+export function WhatsNewRow() {
+  return (
+    <Pressable
+      onPress={() =>
+        whatsNewRef.current?.show(Application.nativeApplicationVersion ?? '')
+      }
+    >
+      <Text>What's new</Text>
+    </Pressable>
+  );
+}
+```
+
+## Headless hook
+
+```tsx
+import { useWhatsNew, WhatsNewSheet } from 'react-native-whats-new';
+
+const wn = useWhatsNew({ notes, currentVersion, storage: AsyncStorage });
+<WhatsNewSheet
+  release={wn.release}
+  visible={wn.visible}
+  onClose={(via, pageIndex) => wn.close(via, pageIndex)}
+  onPageChange={wn.reportPage}
+/>;
+```
+
+`useWhatsNew(options)` takes `notes, currentVersion, storage, matchMode, showOnFirstInstall, when, enabled, onEvent` and returns `{ visible: boolean; release: WhatsNewRelease | null; manual: boolean; show(version): boolean; close(via: 'done' | 'dismissed', pageIndex): void; reportPage(pageIndex): void }`. The hook never asks for a review; call your review API yourself after `close('done', ...)`.
+
+`WhatsNewSheet` props: `release, visible, onClose(via, pageIndex), onPageChange?, onHidden?, theme?, labels?, sheetHeight?, renderVideo?, insets?`.
+
+## Helpers
+
+- `markWhatsNewSeen(storage, version): Promise<void>`: store a version as seen without showing.
+- `resetWhatsNew(storage): Promise<void>`: forget the seen version (next launch = fresh install). Dev only.
+- `validateNotes(json: unknown)`: `{ ok: true; notes } | { ok: false; errors: string[] }` for notes from remote JSON (`list` and `media` only; icons/sources must be `{ uri }`).
+- `compareVersions(a, b): number | null`: -1 / 0 / 1, `null` when unparseable and different.
+- `defaultTheme`, `darkTheme`, `defaultLabels`.
+
+## Seeing it in development
+
+A fresh install is silent by design. To see the sheet:
+
+1. Pass a literal older version, reload, then the newer one: `currentVersion="1.3.0"` then `"1.4.0"` with notes for 1.4.0; or
+2. `await markWhatsNewSeen(AsyncStorage, '0.0.0')` once, then reload; or
+3. Temporarily `showOnFirstInstall` after `resetWhatsNew(AsyncStorage)`.
+
+In `__DEV__` the library warns (`[react-native-whats-new] ...`) about a storage without getItem/setItem, a `currentVersion` that is not a marketing version, and duplicate versions in `notes`.
+
+## Common mistakes
+
+- Passing an MMKV instance as `storage`. MMKV has `getString`/`set`, not `getItem`/`setItem`; use the adapter above.
+- Using the build number (`nativeBuildVersion`, `getBuildNumber()`, "42") as `currentVersion`. Use the marketing version.
+- Mounting `<WhatsNew />` inside a screen that unmounts (a tab, a modal route). Mount it once at the root.
+- Expecting it on first install. Fresh installs are silent; only updates show notes.
+- Mounting it during onboarding or sign-in without `enabled={false}` (and `markWhatsNewSeen` when onboarding ends if you use `showOnFirstInstall`).
+- Adding a "Do you like the app?" pre-question before `requestReview`. Google Play policy forbids any question before the review prompt; call it directly.
+- Testing the rating prompt in TestFlight (iOS never shows it there; it shows in dev builds and App Store installs, max 3 times per 365 days) or from a sideloaded Android APK / `expo start` (Play shows it only for Play-installed builds, including internal testing, with an undisclosed quota). `requestReview` never tells you whether it showed.
+- Putting `custom` pages in remote JSON. They are functions; remote notes are `list` and `media` only, checked with `validateNotes`.
+- Passing `[]` while remote notes load: an empty array is a real answer ("no notes"), so the version gets stored as seen before they arrive. Pass `null` while loading.
+- Two releases with the same version (or "1.2" and "1.2.0"): only the first is used.

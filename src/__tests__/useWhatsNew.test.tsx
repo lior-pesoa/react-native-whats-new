@@ -111,6 +111,27 @@ describe('useWhatsNew', () => {
     await waitFor(() => expect(result.current.visible).toBe(true));
   });
 
+  it('waits while notes are loading (null) and stores nothing', async () => {
+    const { storage, seen } = memoryStorage('1.1.0');
+    const { result, rerender, initialProps } = await setup({
+      storage,
+      notes: null,
+    });
+    await act(flush);
+    expect(storage.getItem).not.toHaveBeenCalled();
+    expect(seen()).toBe('1.1.0');
+
+    await rerender({ ...initialProps, notes });
+    await waitFor(() => expect(result.current.visible).toBe(true));
+  });
+
+  it('treats an empty notes array as an answer: stores the version', async () => {
+    const { storage, seen } = memoryStorage('1.1.0');
+    const { result } = await setup({ storage, notes: [] });
+    await waitFor(() => expect(seen()).toBe('1.2.0'));
+    expect(result.current.visible).toBe(false);
+  });
+
   it('does nothing when storage cannot be read', async () => {
     const storage = {
       getItem: jest.fn(() => Promise.reject(new Error('disk'))),

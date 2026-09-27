@@ -6,6 +6,7 @@ import {
   useState,
 } from 'react';
 import { compareVersions, decideWhatsNew } from './core';
+import { useDevWarnings } from './devWarnings';
 import { readSeen, writeSeen } from './storage';
 import type {
   WhatsNewEvent,
@@ -16,7 +17,8 @@ import type {
 import type { WhatsNewCloseVia } from './WhatsNewSheet';
 
 export type UseWhatsNewOptions = {
-  notes: readonly WhatsNewRelease[];
+  /** null/undefined → still loading (remote notes): wait, store nothing. */
+  notes: readonly WhatsNewRelease[] | null | undefined;
   /** null/undefined → wait until the app knows its version. */
   currentVersion: string | null | undefined;
   /** AsyncStorage, or an adapter over MMKV / SecureStore. */
@@ -69,6 +71,8 @@ export function useWhatsNew(options: UseWhatsNewOptions): UseWhatsNewResult {
     enabled = true,
   } = options;
 
+  useDevWarnings(options);
+
   const [state, setState] = useState<State>(HIDDEN);
   // Mirrors `state` synchronously so a double close can't write or emit twice.
   const stateRef = useRef<State>(HIDDEN);
@@ -97,14 +101,16 @@ export function useWhatsNew(options: UseWhatsNewOptions): UseWhatsNewResult {
   const shownFor = useRef<string | null>(null);
 
   // Content, not identity: `notes` is often an inline array literal.
-  const notesKey = notes.map((n) => `${n.version}:${n.pages.length}`).join('|');
+  const notesKey = notes
+    ? notes.map((n) => `${n.version}:${n.pages.length}`).join('|')
+    : null;
 
   useEffect(() => {
     if (!enabled) {
       evaluatedKey.current = null;
       return undefined;
     }
-    if (!currentVersion) return undefined;
+    if (!currentVersion || notesKey === null) return undefined;
     const key = `${currentVersion}|${matchMode}|${showOnFirstInstall}|${notesKey}`;
     if (evaluatedKey.current === key) return undefined;
 
@@ -126,7 +132,7 @@ export function useWhatsNew(options: UseWhatsNewOptions): UseWhatsNewResult {
       if (stale()) return;
 
       const decision = decideWhatsNew({
-        notes: latest.current.notes,
+        notes: latest.current.notes ?? [],
         currentVersion,
         lastSeen,
         matchMode,
@@ -185,7 +191,7 @@ export function useWhatsNew(options: UseWhatsNewOptions): UseWhatsNewResult {
 
   const show = useCallback(
     (version: string) => {
-      const release = latest.current.notes.find(
+      const release = latest.current.notes?.find(
         (n) => compareVersions(n.version, version) === 0
       );
       if (!release || release.pages.length === 0) return false;

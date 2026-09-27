@@ -32,6 +32,34 @@ npm install react-native-whats-new @react-native-async-storage/async-storage
 No native code — nothing to link, nothing to `pod install`, and it runs fine
 in Expo Go.
 
+## Set up with an AI agent
+
+The package ships an integration guide for coding agents, so Claude Code,
+Cursor, Codex, Copilot and friends can wire it up correctly the first time.
+
+- **Install the skill** (Claude Code, Cursor, Codex and other agents that
+  read Agent Skills):
+
+  ```sh
+  npx skills add lior-pesoa/react-native-whats-new
+  ```
+
+- **Or point your agent at [`llms.txt`](llms.txt)**: it's in
+  `node_modules/react-native-whats-new/llms.txt` after install, and at
+  `https://raw.githubusercontent.com/lior-pesoa/react-native-whats-new/main/llms.txt`.
+
+- **Copy-paste prompt:**
+
+  > Add react-native-whats-new to this app. Read
+  > node_modules/react-native-whats-new/llms.txt first. Show notes for the
+  > current version, mount it at the root, and ask for a store rating after
+  > "Got it".
+
+In development the library also logs `[react-native-whats-new]` warnings,
+each naming its fix, for the usual setup mistakes (an MMKV instance passed
+as `storage`, a build number as `currentVersion`, duplicate versions in
+`notes`).
+
 ## 60-second quickstart
 
 ```tsx
@@ -240,6 +268,12 @@ if (result.ok) {
 }
 ```
 
+Keep `notes` as `null` until the fetch lands
+(`useState<WhatsNewRelease[] | null>(null)`): `null` means "still loading",
+so nothing is checked or stored. An empty array is a real answer ("no notes
+for this version"), and that version is remembered as seen. If the fetch
+fails, leave it `null` and the sheet simply tries again next launch.
+
 `custom` pages are functions, so they can never come from JSON — remote
 notes are limited to `list` and `media` pages.
 
@@ -331,7 +365,7 @@ copy from your notes is ever included.
 
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `notes` | `WhatsNewRelease[]` | — | Required |
+| `notes` | `WhatsNewRelease[] \| null` | — | Required. `null` = still loading (remote notes) |
 | `currentVersion` | `string \| null \| undefined` | — | `null`/`undefined` = wait, don't check yet |
 | `storage` | `WhatsNewStorage` | — | Required; `AsyncStorage` fits directly |
 | `matchMode` | `'exact' \| 'minor'` | `'exact'` | |
@@ -357,7 +391,7 @@ Same options as `<WhatsNew />` minus the rendering-only ones (`theme`,
 | Field | Type | Notes |
 | --- | --- | --- |
 | `visible` | `boolean` | |
-| `release` | `WhatsNewRelease \| undefined` | |
+| `release` | `WhatsNewRelease \| null` | Stays set after close so the sheet can animate out |
 | `manual` | `boolean` | `true` when opened via `show()` |
 | `show(version)` | `(version: string) => boolean` | |
 | `close(via, pageIndex)` | `(via: 'done' \| 'dismissed', pageIndex: number) => void` | |
@@ -370,7 +404,7 @@ Same options as `<WhatsNew />` minus the rendering-only ones (`theme`,
 | `markWhatsNewSeen` | `(storage, version) => Promise<void>` | Call at the end of onboarding so the just-installed version is never shown as "new" |
 | `resetWhatsNew` | `(storage) => Promise<void>` | Dev/debug only |
 | `validateNotes` | `(json: unknown) => { ok: true; notes } \| { ok: false; errors: string[] }` | For notes fetched as JSON; `custom` pages can't validate from JSON |
-| `compareVersions` | `(a: string, b: string) => number` | Semver-ish comparison used internally |
+| `compareVersions` | `(a: string, b: string) => number \| null` | Semver-ish comparison used internally; `null` when unparseable and different |
 | `defaultTheme`, `darkTheme` | `WhatsNewTheme` | |
 | `defaultLabels` | `WhatsNewLabels` | |
 
