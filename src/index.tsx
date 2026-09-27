@@ -1,1 +1,12 @@
-export { multiply } from './multiply';
+export { WhatsNew } from './WhatsNew';
+export type { WhatsNewProps, WhatsNewHandle } from './WhatsNew';
+export { WhatsNewSheet } from './WhatsNewSheet';
+export type { WhatsNewSheetProps, WhatsNewCloseVia } from './WhatsNewSheet';
+export { useWhatsNew } from './useWhatsNew';
+export type { UseWhatsNewOptions, UseWhatsNewResult } from './useWhatsNew';
+export { markWhatsNewSeen, resetWhatsNew } from './storage';
+export { validateNotes } from './validate';
+export type { ValidateNotesResult } from './validate';
+export { compareVersions } from './core';
+export { defaultTheme, darkTheme, defaultLabels } from './theme';
+export type * from './types';
