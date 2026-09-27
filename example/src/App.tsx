@@ -6,6 +6,7 @@ import {
 } from 'react-native-safe-area-context';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as StoreReview from 'expo-store-review';
 import {
   WhatsNew,
   resetWhatsNew,
@@ -69,10 +70,9 @@ const notes: WhatsNewRelease[] = [
       {
         type: 'media',
         kind: 'video',
-        source: {
-          uri: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-        },
-        poster: { uri: 'https://picsum.photos/seed/whats-new-2/900/1400' },
+        // Bundled, so the demo never depends on someone else's bucket.
+        source: require('../assets/demo.mp4'),
+        poster: require('../assets/demo-poster.jpg'),
         title: 'See it in action',
         description: 'A quick look at what changed.',
       },
@@ -150,6 +150,8 @@ function ExampleApp() {
   );
   const [customTheme, setCustomTheme] = useState(false);
   const [askForReview, setAskForReview] = useState(true);
+  // 'stub' shows a banner; 'store' calls the real prompt (see requestReview below).
+  const [reviewMode, setReviewMode] = useState<'stub' | 'store'>('stub');
   const [toast, setToast] = useState<string | null>(null);
   const [events, setEvents] = useState<WhatsNewEvent[]>([]);
 
@@ -223,6 +225,14 @@ function ExampleApp() {
             label={`Rating ask: ${askForReview ? 'on' : 'off'}`}
             onPress={() => setAskForReview((current) => !current)}
           />
+          <Button
+            label={`Rating: ${reviewMode === 'stub' ? 'banner' : 'store prompt'}`}
+            onPress={() =>
+              setReviewMode((current) =>
+                current === 'stub' ? 'store' : 'stub'
+              )
+            }
+          />
         </View>
 
         {toast ? (
@@ -260,11 +270,23 @@ function ExampleApp() {
         renderVideo={(source) => <ExampleVideoPage source={source} />}
         onEvent={handleEvent}
         reviewOn={askForReview ? 'done' : 'never'}
-        requestReview={() =>
+        requestReview={async () => {
+          if (reviewMode === 'store') {
+            // iOS dev builds / simulator: always shows (can't submit).
+            // Expo Go, TestFlight, sideloaded Android: usually nothing.
+            const available = await StoreReview.isAvailableAsync();
+            showToast(
+              available
+                ? 'StoreReview.requestReview() called'
+                : 'Store review is not available on this device'
+            );
+            if (available) await StoreReview.requestReview();
+            return;
+          }
           showToast(
             'requestReview() called — the OS would show its rating prompt here'
-          )
-        }
+          );
+        }}
       />
     </View>
   );

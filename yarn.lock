@@ -5369,6 +5369,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"expo-store-review@npm:~57.0.3":
+  version: 57.0.3
+  resolution: "expo-store-review@npm:57.0.3"
+  peerDependencies:
+    expo: "*"
+    react-native: "*"
+  checksum: 10c0/f7b5e8cf5a7bff3e8bed6753a31ab3b736d4429daa3ec3ba8b136ebe66d28ddf03edf15c00bb5b1cfeb14fb7d1c21a6ff3b08a0f4df78f37566ba8525a13982d
+  languageName: node
+  linkType: hard
+
 "expo-video@npm:~57.0.5":
   version: 57.0.5
   resolution: "expo-video@npm:57.0.5"
@@ -8922,6 +8932,7 @@ __metadata:
     "@react-native-async-storage/async-storage": "npm:2.2.0"
     expo: "npm:~57.0.25"
     expo-status-bar: "npm:~57.0.1"
+    expo-store-review: "npm:~57.0.3"
     expo-video: "npm:~57.0.5"
     react: "npm:19.2.3"
     react-dom: "npm:19.2.3"
