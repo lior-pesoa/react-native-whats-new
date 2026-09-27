@@ -153,7 +153,7 @@ function ExampleApp() {
   // 'stub' shows a banner; 'store' calls the real prompt (see requestReview below).
   const [reviewMode, setReviewMode] = useState<'stub' | 'store'>('stub');
   const [toast, setToast] = useState<string | null>(null);
-  const [events, setEvents] = useState<WhatsNewEvent[]>([]);
+  const [events, setEvents] = useState<LoggedEvent[]>([]);
 
   const showToast = (message: string) => {
     setToast(message);
@@ -164,7 +164,9 @@ function ExampleApp() {
   };
 
   const handleEvent = (event: WhatsNewEvent) => {
-    setEvents((current) => [event, ...current].slice(0, 8));
+    setEvents((current) =>
+      [{ event, at: new Date() }, ...current].slice(0, 12)
+    );
   };
 
   return (
@@ -241,18 +243,35 @@ function ExampleApp() {
           </View>
         ) : null}
 
-        <Text style={styles.sectionTitle}>Event log</Text>
+        <View style={styles.logHeader}>
+          <Text style={styles.sectionTitle}>What your analytics would get</Text>
+          {events.length > 0 ? (
+            <Pressable onPress={() => setEvents([])} hitSlop={8}>
+              <Text style={styles.logClear}>Clear</Text>
+            </Pressable>
+          ) : null}
+        </View>
+        <Text style={styles.logHint}>Newest first.</Text>
         <View style={styles.log}>
           {events.length === 0 ? (
             <Text style={styles.logEmpty}>
-              No events yet — switch to a version with notes.
+              Nothing yet. Switch to 1.1.0 or 1.2.0 to trigger the sheet.
             </Text>
           ) : (
-            events.map((event, index) => (
-              <Text key={index} style={styles.logLine}>
-                {JSON.stringify(event)}
-              </Text>
-            ))
+            events.map(({ event, at }, index) => {
+              const line = describeEvent(event);
+              return (
+                <View key={events.length - index} style={styles.logRow}>
+                  <Text style={styles.logIcon}>{line.icon}</Text>
+                  <View style={styles.logBody}>
+                    <Text style={styles.logText}>{line.text}</Text>
+                    <Text style={styles.logMeta}>
+                      {formatTime(at)} · {event.type}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })
           )}
         </View>
       </ScrollView>
@@ -290,6 +309,47 @@ function ExampleApp() {
       />
     </View>
   );
+}
+
+type LoggedEvent = { event: WhatsNewEvent; at: Date };
+
+/** One plain-English line per event, so the log reads on a phone. */
+function describeEvent(event: WhatsNewEvent): { icon: string; text: string } {
+  switch (event.type) {
+    case 'shown':
+      return {
+        icon: '📬',
+        text: `Opened ${event.version} ${
+          event.manual
+            ? 'from the button (manual)'
+            : 'automatically after the update'
+        } · ${event.pageCount} ${event.pageCount === 1 ? 'page' : 'pages'}`,
+      };
+    case 'page_viewed':
+      return {
+        icon: '👉',
+        text: `Moved to page ${event.pageIndex + 1} of ${event.pageCount}`,
+      };
+    case 'done':
+      return {
+        icon: '✅',
+        text: `Tapped "Got it" on page ${event.pageIndex + 1} of ${event.pageCount}`,
+      };
+    case 'dismissed':
+      return {
+        icon: '👋',
+        text: `Closed without finishing, on page ${event.pageIndex + 1} of ${event.pageCount}`,
+      };
+    case 'review_requested':
+      return {
+        icon: '⭐',
+        text: `Asked for a store rating (${event.version})`,
+      };
+  }
+}
+
+function formatTime(date: Date): string {
+  return date.toTimeString().slice(0, 8);
 }
 
 export default function App() {
@@ -372,15 +432,46 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   log: {
-    gap: 6,
+    gap: 10,
+  },
+  logHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  logHint: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: -4,
+  },
+  logClear: {
+    fontSize: 14,
+    color: '#7B61FF',
+  },
+  logRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'flex-start',
+  },
+  logIcon: {
+    fontSize: 18,
+    lineHeight: 22,
+  },
+  logBody: {
+    flex: 1,
+    gap: 2,
+  },
+  logText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#222',
+  },
+  logMeta: {
+    fontSize: 11,
+    color: '#999',
   },
   logEmpty: {
     fontSize: 13,
     color: '#888',
-  },
-  logLine: {
-    fontSize: 11,
-    color: '#333',
-    fontFamily: 'Courier',
   },
 });
