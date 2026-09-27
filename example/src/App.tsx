@@ -149,6 +149,7 @@ function ExampleApp() {
     'standard'
   );
   const [customTheme, setCustomTheme] = useState(false);
+  const [askForReview, setAskForReview] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const [events, setEvents] = useState<WhatsNewEvent[]>([]);
 
@@ -217,6 +218,12 @@ function ExampleApp() {
             onPress={() => setCustomTheme((current) => !current)}
           />
         </View>
+        <View style={styles.row}>
+          <Button
+            label={`Rating ask: ${askForReview ? 'on' : 'off'}`}
+            onPress={() => setAskForReview((current) => !current)}
+          />
+        </View>
 
         {toast ? (
           <View style={styles.toast}>
@@ -252,6 +259,7 @@ function ExampleApp() {
         insets={{ top: insets.top, bottom: insets.bottom }}
         renderVideo={(source) => <ExampleVideoPage source={source} />}
         onEvent={handleEvent}
+        reviewOn={askForReview ? 'done' : 'never'}
         requestReview={() =>
           showToast(
             'requestReview() called — the OS would show its rating prompt here'

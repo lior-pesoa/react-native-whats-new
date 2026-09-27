@@ -91,6 +91,14 @@ describe('WhatsNew', () => {
     expect(requestReview).toHaveBeenCalledTimes(1);
   });
 
+  it('never asks with reviewOn never', async () => {
+    const { requestReview, events } = await mount({ reviewOn: 'never' });
+    await closeAndHide('done');
+    await tick(1000);
+    expect(requestReview).not.toHaveBeenCalled();
+    expect(events.some((e) => e.type === 'review_requested')).toBe(false);
+  });
+
   it('never asks after a manual show', async () => {
     const { requestReview, ref } = await mount({}, '1.2.0');
     expect(current().visible).toBe(false);

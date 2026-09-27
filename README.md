@@ -137,15 +137,25 @@ what's stored:
 | --- | --- |
 | Fresh install, no prior seen version | Nothing shown; current version stored silently (unless `showOnFirstInstall`) |
 | Current version unchanged since last seen | Nothing shown |
-| Current version is *older* than last seen (downgrade) | Nothing shown; stored version updated to the older one |
+| Current version is *older* than last seen (downgrade) | Nothing shown; the stored version stays as it was |
 | Update, and `notes` has an entry for the new version | Sheet shown for that release |
 | Update, and `notes` has no entry for the new version | Nothing shown; version stored so it's never revisited |
-| Several versions skipped, only some have notes | Shows notes for the newest version that has an exact/matching entry not newer than the app |
+| Several versions skipped, only some have notes | Shows the current version's notes only (skipped versions' notes are not replayed) |
 | `matchMode="minor"`, app is on a patch release | Reuses the newest `notes` entry from the same `major.minor` (`1.2.3` reuses `1.2.0`) |
 | `when` returns `false` | Sheet skipped for this launch only; nothing is marked seen, so it's re-checked next launch |
 | `enabled={false}` | Component is a no-op — no checks, no storage reads/writes |
 
 ## Asking for a rating
+
+The rating ask is optional. Leave out `requestReview` (or pass
+`reviewOn="never"`, handy behind a remote flag) and the sheet is just
+release notes:
+
+```tsx
+<WhatsNew notes={notes} currentVersion={version} storage={AsyncStorage} />
+```
+
+To ask:
 
 ```tsx
 <WhatsNew
@@ -330,7 +340,7 @@ copy from your notes is ever included.
 | `enabled` | `boolean` | `true` | `false` = full no-op |
 | `onEvent` | `(e: WhatsNewEvent) => void` | — | |
 | `requestReview` | `() => unknown` | — | e.g. `StoreReview.requestReview` |
-| `reviewOn` | `'done' \| 'done-or-dismiss'` | `'done'` | |
+| `reviewOn` | `'done' \| 'done-or-dismiss' \| 'never'` | `'done'` | `'never'` = notes only |
 | `reviewDelayMs` | `number` | `400` | After the sheet finishes closing |
 | `theme` | `Partial<WhatsNewTheme>` | — | Merged over the system light/dark base |
 | `labels` | `Partial<WhatsNewLabels>` | — | |

@@ -19,8 +19,11 @@ export type WhatsNewProps = UseWhatsNewOptions &
   > & {
     /** Your store-rating call, e.g. StoreReview.requestReview. */
     requestReview?: () => Promise<unknown> | unknown;
-    /** Default 'done': only a user who read to the end is asked. */
-    reviewOn?: 'done' | 'done-or-dismiss';
+    /**
+     * Default 'done': only a user who read to the end is asked.
+     * 'never' keeps the sheet notes-only (same as leaving out requestReview).
+     */
+    reviewOn?: 'done' | 'done-or-dismiss' | 'never';
     /** Default 400, counted from the end of the sheet's out-animation. */
     reviewDelayMs?: number;
   };
@@ -82,6 +85,7 @@ export const WhatsNew = forwardRef<WhatsNewHandle, WhatsNewProps>(
         const wanted =
           !manual &&
           release !== null &&
+          reviewOn !== 'never' &&
           (via === 'done' || reviewOn === 'done-or-dismiss');
         pendingReview.current = wanted && release ? release.version : null;
         close(via, pageIndex);
