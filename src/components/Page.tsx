@@ -108,27 +108,38 @@ function MediaPage({
     page.aspectRatio > 0
       ? page.aspectRatio
       : 1;
-  // Fill the page width, but never let a tall frame push the text away.
+  // Fill the page width, but never let a tall frame push the text and the
+  // button out of a standard (75%-of-window) sheet.
   const available = Math.max(0, width - PAGE_PADDING * 2);
-  const frameHeight = Math.min(available / ratio, window.height * 0.45);
+  const frameHeight = Math.max(
+    0,
+    Math.min(
+      available / ratio,
+      window.height * 0.45,
+      window.height * 0.75 - RESERVED_FOR_TEXT_AND_CHROME
+    )
+  );
   const frame = { width: frameHeight * ratio, height: frameHeight };
+  // Explicit size, not absoluteFill: some RN versions draw a bundled image
+  // at its pixel size inside an absolutely positioned fill.
+  const fill = { width: frame.width, height: frame.height };
   let media: ReactNode = null;
   if (page.kind === 'image') {
     media = (
       <Image
         source={page.source}
-        style={StyleSheet.absoluteFill}
+        style={fill}
         resizeMode="cover"
         accessibilityIgnoresInvertColors
       />
     );
   } else if (renderVideo) {
-    media = renderVideo(page.source, page);
+    media = <View style={fill}>{renderVideo(page.source, page)}</View>;
   } else if (page.poster !== undefined) {
     media = (
       <Image
         source={page.poster}
-        style={StyleSheet.absoluteFill}
+        style={fill}
         resizeMode="cover"
         accessibilityIgnoresInvertColors
       />
@@ -217,6 +228,8 @@ export function Page({
 }
 
 const PAGE_PADDING = 24;
+// Handle + title + two lines of description + dots + button + bottom inset.
+const RESERVED_FOR_TEXT_AND_CHROME = 330;
 
 const styles = StyleSheet.create({
   pageContent: {
