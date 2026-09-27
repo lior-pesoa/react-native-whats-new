@@ -1,6 +1,6 @@
 {
   "name": "@liorpesoa/react-native-whats-new",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A what's-new carousel for React Native that asks for a store rating when it closes. iOS + Android, no native code.",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",

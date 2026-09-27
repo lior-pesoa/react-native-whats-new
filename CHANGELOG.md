@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1 — unreleased
+## 0.1.1 — 2026-09-27
 
 - `ref.current.dismiss()`: close the sheet from code (counts as
   `dismissed`, never asks for a review).
