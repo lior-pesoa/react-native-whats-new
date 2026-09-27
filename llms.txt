@@ -83,6 +83,7 @@ type WhatsNewPage =
       kind: 'image' | 'video';
       source: { uri: string } | number; // remote, or require('./x.png')
       poster?: { uri: string } | number; // shown for video without renderVideo
+      aspectRatio?: number; // width ÷ height, default 1 (square, cropped); 3 / 4 shows a portrait photo whole
       title?: string;
       description?: string;
     }

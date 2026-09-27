@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
   type ImageSourcePropType,
   type TextStyle,
 } from 'react-native';
@@ -91,13 +92,26 @@ function ListPage({
 
 function MediaPage({
   page,
+  width,
   theme,
   renderVideo,
 }: {
   page: Extract<WhatsNewPage, { type: 'media' }>;
+  width: number;
   theme: WhatsNewTheme;
   renderVideo?: RenderVideo;
 }) {
+  const window = useWindowDimensions();
+  const ratio =
+    page.aspectRatio !== undefined &&
+    Number.isFinite(page.aspectRatio) &&
+    page.aspectRatio > 0
+      ? page.aspectRatio
+      : 1;
+  // Fill the page width, but never let a tall frame push the text away.
+  const available = Math.max(0, width - PAGE_PADDING * 2);
+  const frameHeight = Math.min(available / ratio, window.height * 0.45);
+  const frame = { width: frameHeight * ratio, height: frameHeight };
   let media: ReactNode = null;
   if (page.kind === 'image') {
     media = (
@@ -125,6 +139,7 @@ function MediaPage({
       <View
         style={[
           styles.media,
+          frame,
           {
             borderRadius: Math.round(theme.radius * 0.6),
             backgroundColor: theme.dot,
@@ -175,7 +190,12 @@ export function Page({
       break;
     case 'media':
       content = (
-        <MediaPage page={page} theme={theme} renderVideo={renderVideo} />
+        <MediaPage
+          page={page}
+          width={width}
+          theme={theme}
+          renderVideo={renderVideo}
+        />
       );
       break;
     case 'custom':
@@ -196,9 +216,11 @@ export function Page({
   );
 }
 
+const PAGE_PADDING = 24;
+
 const styles = StyleSheet.create({
   pageContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: PAGE_PADDING,
     paddingTop: 8,
     paddingBottom: 16,
   },
@@ -237,8 +259,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   media: {
-    width: '100%',
-    aspectRatio: 1,
+    alignSelf: 'center',
     overflow: 'hidden',
   },
   mediaTitle: {

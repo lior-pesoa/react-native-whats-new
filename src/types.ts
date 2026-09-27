@@ -19,6 +19,12 @@ export type WhatsNewPage =
       source: WhatsNewSource;
       /** Shown for a video when no `renderVideo` is given, and while it loads. */
       poster?: WhatsNewSource;
+      /**
+       * Frame width ÷ height. Default 1 (square, cropped to fill). Pass the
+       * media's own ratio (e.g. 3 / 4) to show it whole. Tall frames are
+       * capped at 45% of the window height and narrowed to keep the ratio.
+       */
+      aspectRatio?: number;
       title?: string;
       description?: string;
     }

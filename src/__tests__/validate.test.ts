@@ -66,4 +66,22 @@ describe('validateNotes', () => {
     ]);
     expect(errors).toEqual(["[0].pages[0].kind must be 'image' or 'video'"]);
   });
+
+  it('accepts a positive aspectRatio and rejects anything else', () => {
+    const page = (aspectRatio: unknown) => [
+      {
+        version: '1',
+        pages: [
+          { type: 'media', kind: 'image', source: { uri: 'x' }, aspectRatio },
+        ],
+      },
+    ];
+    expect(validateNotes(page(0.75)).ok).toBe(true);
+    expect(errorsOf(page(0))).toEqual([
+      '[0].pages[0].aspectRatio must be a positive number when set',
+    ]);
+    expect(errorsOf(page('3/4'))).toEqual([
+      '[0].pages[0].aspectRatio must be a positive number when set',
+    ]);
+  });
 });

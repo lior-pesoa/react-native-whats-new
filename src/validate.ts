@@ -67,6 +67,16 @@ function validatePage(page: unknown, path: string, errors: string[]): void {
       if (page.poster !== undefined && !isUriSource(page.poster)) {
         errors.push(`${path}.poster must be { uri: string } when set`);
       }
+      if (
+        page.aspectRatio !== undefined &&
+        !(
+          typeof page.aspectRatio === 'number' &&
+          Number.isFinite(page.aspectRatio) &&
+          page.aspectRatio > 0
+        )
+      ) {
+        errors.push(`${path}.aspectRatio must be a positive number when set`);
+      }
       optionalString(page, 'title', path, errors);
       optionalString(page, 'description', path, errors);
       return;

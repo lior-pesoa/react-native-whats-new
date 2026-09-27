@@ -149,9 +149,10 @@ const notes: WhatsNewRelease[] = [
 
 - `list` — a titled list of rows, each with an optional icon (an emoji /
   element, or an `ImageSourcePropType`), a title and a description.
-- `media` — a full-bleed image or video with an optional caption. Videos
-  need `renderVideo` (below) to actually play; without it they show
-  `poster`.
+- `media` — an image or video with an optional caption. The frame is
+  square by default (cropped to fill); pass `aspectRatio` (width ÷ height,
+  e.g. `3 / 4`) to show the media whole. Videos need `renderVideo` (below)
+  to actually play; without it they show `poster`.
 - `custom` — anything you want, as a render function. Custom pages are code,
   so they can't come from remote JSON — see [`validateNotes`](#helpers) for
   the JSON case.
