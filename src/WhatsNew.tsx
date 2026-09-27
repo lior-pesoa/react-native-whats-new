@@ -31,6 +31,12 @@ export type WhatsNewProps = UseWhatsNewOptions &
 export type WhatsNewHandle = {
   /** Opens a version's notes on demand (a "what's new" row in settings). */
   show(version: string): boolean;
+  /**
+   * Closes the sheet from code (counts as `dismissed`, never asks for a
+   * review) — e.g. before navigating away from a notification tap. No-op
+   * when nothing is showing.
+   */
+  dismiss(): void;
 };
 
 export const WhatsNew = forwardRef<WhatsNewHandle, WhatsNewProps>(
@@ -60,18 +66,39 @@ export const WhatsNew = forwardRef<WhatsNewHandle, WhatsNewProps>(
       enabled,
       onEvent,
     });
-    const { show, close, reportPage, manual, release } = whatsNew;
+    const { show, close, reportPage, manual, release, visible } = whatsNew;
 
-    useImperativeHandle(ref, () => ({ show }), [show]);
+    // Version to ask a review for once the sheet is fully gone — the store
+    // prompt must not fight the sheet's out-animation.
+    const pendingReview = useRef<string | null>(null);
+
+    // The page the user is on, for a dismiss that comes from code.
+    const pageRef = useRef(0);
+    const onPageChange = useCallback(
+      (pageIndex: number) => {
+        pageRef.current = pageIndex;
+        reportPage(pageIndex);
+      },
+      [reportPage]
+    );
+
+    const visibleRef = useRef(visible);
+    // Every show starts on the first page.
+    if (visible && !visibleRef.current) pageRef.current = 0;
+    visibleRef.current = visible;
+    const dismiss = useCallback(() => {
+      if (!visibleRef.current) return;
+      pendingReview.current = null;
+      close('dismissed', pageRef.current);
+    }, [close]);
+
+    useImperativeHandle(ref, () => ({ show, dismiss }), [show, dismiss]);
 
     const latest = useRef({ requestReview, onEvent });
     useEffect(() => {
       latest.current = { requestReview, onEvent };
     });
 
-    // Version to ask a review for once the sheet is fully gone — the store
-    // prompt must not fight the sheet's out-animation.
-    const pendingReview = useRef<string | null>(null);
     const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(
       () => () => {
@@ -122,7 +149,7 @@ export const WhatsNew = forwardRef<WhatsNewHandle, WhatsNewProps>(
         release={release}
         visible={whatsNew.visible}
         onClose={onClose}
-        onPageChange={reportPage}
+        onPageChange={onPageChange}
         onHidden={onHidden}
       />
     );

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 — unreleased
+
+- `ref.current.dismiss()`: close the sheet from code (counts as
+  `dismissed`, never asks for a review).
+- Fix: a closed sheet could leave an invisible Modal that blocked every tap.
+
 ## 0.1.0 — 2026-09-27
 
 First release.

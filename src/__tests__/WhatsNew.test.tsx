@@ -99,6 +99,30 @@ describe('WhatsNew', () => {
     expect(events.some((e) => e.type === 'review_requested')).toBe(false);
   });
 
+  it('dismiss() from the ref closes the sheet as dismissed, without a review', async () => {
+    const { requestReview, events, ref } = await mount({
+      reviewOn: 'done-or-dismiss',
+    });
+    expect(current().visible).toBe(true);
+    await act(async () => {
+      ref.current?.dismiss();
+    });
+    expect(current().visible).toBe(false);
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: 'dismissed', pageIndex: 0 })
+    );
+    await act(async () => {
+      current().onHidden?.();
+    });
+    await tick(1000);
+    expect(requestReview).not.toHaveBeenCalled();
+    // A second call with nothing showing is a no-op.
+    await act(async () => {
+      ref.current?.dismiss();
+    });
+    expect(events.filter((e) => e.type === 'dismissed')).toHaveLength(1);
+  });
+
   it('never asks after a manual show', async () => {
     const { requestReview, ref } = await mount({}, '1.2.0');
     expect(current().visible).toBe(false);

@@ -123,7 +123,7 @@ type WhatsNewListRow = {
 | `sheetHeight` | `'standard' \| 'full'` | `'standard'` | standard = content-sized, max 75% of the window |
 | `renderVideo` | `(source, page) => ReactNode` | none | e.g. an expo-video `VideoView` |
 | `insets` | `{ top: number; bottom: number }` | `{ top: 0, bottom: 0 }` | Pass `useSafeAreaInsets()`; the sheet adds 24px |
-| `ref` | `Ref<WhatsNewHandle>` | none | `ref.current?.show(version): boolean` |
+| `ref` | `Ref<WhatsNewHandle>` | none | `ref.current?.show(version): boolean`, `ref.current?.dismiss()` (closes from code, never asks for a review) |
 
 ```ts
 type WhatsNewTheme = {
@@ -158,6 +158,8 @@ Checked once per mount (again if `currentVersion`, `matchMode`, `showOnFirstInst
 4. Update, but `notes` has no release for it (or it has zero pages): nothing; current version stored, so notes added later for this version never show.
 5. Update with a matching release: `when()` is awaited if given (false = retry next launch), then the sheet shows. Only the current version's notes show; skipped versions are not replayed.
 6. Closing the automatic sheet (any way) stores the version as seen.
+
+Close from code with `ref.current?.dismiss()` — do this before your app navigates somewhere on its own (a notification tap), because opening a full-screen route over a React Native Modal can leave iOS with an invisible layer that blocks taps. If your app has its own queue for auto-presented sheets, gate `enabled` on your slot.
 
 Manual shows via `ref.current?.show(version)` (exact version match) never touch storage and never ask for a review. They return `false` when that version has no notes.
 

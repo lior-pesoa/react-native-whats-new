@@ -390,7 +390,7 @@ copy from your notes is ever included.
 | `sheetHeight` | `'standard' \| 'full'` | `'standard'` | |
 | `renderVideo` | `(source, page) => ReactNode` | — | Without it, video pages show `poster` |
 | `insets` | `{ top: number; bottom: number }` | — | Pass `useSafeAreaInsets()` |
-| `ref` | `Ref<WhatsNewHandle>` | — | `ref.current.show(version) → boolean` |
+| `ref` | `Ref<WhatsNewHandle>` | — | `ref.current.show(version) → boolean`; `ref.current.dismiss()` closes it from code (counts as dismissed, never asks for a review) |
 
 ### `useWhatsNew(options)`
 
