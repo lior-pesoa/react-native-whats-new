@@ -1,4 +1,4 @@
-import { Text } from 'react-native';
+import { Animated, Text } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import type { WhatsNewRelease } from '../types';
 import { WhatsNewSheet } from '../WhatsNewSheet';
@@ -79,6 +79,40 @@ describe('WhatsNewSheet', () => {
     });
     expect(onClose).toHaveBeenCalledWith('dismissed', 0);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('unmounts the modal after closing, even if the animation never reports back', async () => {
+    jest.useFakeTimers();
+    // An out-animation whose callback never fires — the stuck-app case.
+    const timing = jest.spyOn(Animated, 'timing').mockImplementation(
+      () =>
+        ({
+          start: () => {},
+          stop: () => {},
+          reset: () => {},
+        }) as unknown as Animated.CompositeAnimation
+    );
+    try {
+      const onHidden = jest.fn();
+      const props = { release, onClose: jest.fn(), onHidden };
+      const view = await render(<WhatsNewSheet {...props} visible />);
+      const sheet = () =>
+        screen.queryByTestId('whats-new-sheet', {
+          includeHiddenElements: true,
+        });
+      expect(sheet()).not.toBeNull();
+
+      await view.rerender(<WhatsNewSheet {...props} visible={false} />);
+      await act(async () => {
+        jest.advanceTimersByTime(1000);
+      });
+      // RN's Modal renders nothing once `visible` is false.
+      expect(sheet()).toBeNull();
+      expect(onHidden).toHaveBeenCalledTimes(1);
+    } finally {
+      timing.mockRestore();
+      jest.useRealTimers();
+    }
   });
 
   it('lets screen readers close through the grab handle', async () => {

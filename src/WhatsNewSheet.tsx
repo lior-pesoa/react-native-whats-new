@@ -110,6 +110,9 @@ export function WhatsNewSheet({
   const reduceMotion = useReduceMotion();
 
   const shown = visible && release !== null && release.pages.length > 0;
+  // Read by the close path, which may finish after a later render re-opened it.
+  const shownRef = useRef(shown);
+  shownRef.current = shown;
   const [mounted, setMounted] = useState(shown);
   const mountedRef = useRef(shown);
   // Keeps the last release on screen while the sheet animates out.
@@ -149,18 +152,30 @@ export function WhatsNewSheet({
       anim.start();
       return () => anim.stop();
     }
+    // The Modal MUST go away once closed: a transparent Modal left mounted
+    // swallows every touch in the app. So unmount when the animation ends
+    // for any reason (interrupted included), with a timer as a backstop in
+    // case the animation never reports back.
+    let hidden = false;
+    const hide = () => {
+      if (hidden || shownRef.current || !mountedRef.current) return;
+      hidden = true;
+      mountedRef.current = false;
+      setMounted(false);
+      latest.current.onHidden?.();
+    };
     const anim = Animated.timing(progress, {
       toValue: 0,
       duration: OUT_MS,
       useNativeDriver: true,
     });
-    anim.start(({ finished }) => {
-      if (!finished || !mountedRef.current) return;
-      mountedRef.current = false;
-      setMounted(false);
-      latest.current.onHidden?.();
-    });
-    return () => anim.stop();
+    anim.start(hide);
+    const backstop = setTimeout(hide, OUT_MS + 300);
+    return () => {
+      clearTimeout(backstop);
+      anim.stop();
+      hide();
+    };
   }, [shown, release, progress, dragY]);
 
   const dismiss = useCallback(() => {
